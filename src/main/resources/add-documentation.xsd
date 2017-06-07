@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                version="1.0">
+
+    <xsl:output
+            method="xml"
+            version="1.0"
+            encoding="utf-8"
+            omit-xml-declaration="no"
+            indent="no"
+    />
+
+    <xsl:variable name="documentations" select="document('http://meeuw.org/documentations')" />
+
+    <xsl:template match="@*|node()">
+        <xsl:copy>
+            <xsl:apply-templates select="@*|node()"/>
+        </xsl:copy>
+    </xsl:template>
+
+
+    <xsl:template match="xs:complexType">
+        <xsl:copy>
+            <xsl:variable name="key">
+                <xsl:text>{</xsl:text>
+                <xsl:value-of select="/xs:schema/@targetNamespace"/>
+                <xsl:text>}</xsl:text>
+                <xsl:value-of select="@name"/>
+            </xsl:variable>
+            <xsl:variable name="documentation" select="$documentations/properties/entry[@key = $key]/text()" />
+            <xsl:if test="$documentation">
+                <xs:documentation>
+                    <xsl:value-of select="$documentation" />
+                </xs:documentation>
+            </xsl:if>
+            <xsl:apply-templates select="@*|node()" />
+        </xsl:copy>
+    </xsl:template>
+</xsl:stylesheet>
