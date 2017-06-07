@@ -1,4 +1,5 @@
-*** jaxb-documentation
+jaxb-documentation
+==================
 
 Makes it possible to create also xsd:documentation tags with JAXB
 
