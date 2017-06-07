@@ -1,7 +1,9 @@
 jaxb-documentation
 ==================
 
-Makes it possible to create also xsd:documentation tags with JAXB
+Makes it possible to create also xsd:documentation tags with JAXB.
+
+This is work in an early stage of development. About this is working now.
 
 ```java
 
