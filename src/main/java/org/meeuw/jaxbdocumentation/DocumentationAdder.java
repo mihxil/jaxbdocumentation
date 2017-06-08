@@ -1,17 +1,23 @@
 package org.meeuw.jaxbdocumentation;
 
 import java.io.*;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Supplier;
 
-import javax.xml.namespace.QName;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.SchemaOutputResolver;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
-import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 
 import org.xml.sax.EntityResolver;
@@ -31,13 +37,52 @@ public class DocumentationAdder implements Supplier<Transformer> {
 
     private final Class<?>[] classes;
     private Transformer transformer;
+    private File tempFile;
 
     public DocumentationAdder(Class<?>... classes) {
         this.classes = classes;
     }
 
-    public void transform(Source source, StreamResult out) throws TransformerException {
+    public void transform(Source source, Result out) throws TransformerException {
         get().transform(source, out);
+    }
+
+    /**
+     * Returns the associated XSD schema's as a map of {@link Source}'s. The key is the namespace.
+     */
+    public Map<String, Source> schemaSources() throws JAXBException, IOException, SAXException {
+        JAXBContext context = JAXBContext.newInstance(classes);
+        final Map<String, DOMResult> results = new HashMap<>();
+        context.generateSchema(new SchemaOutputResolver() {
+            @Override
+            public Result createOutput(String namespaceUri, String suggestedFileName) throws IOException {
+                DOMResult dom = new DOMResult();
+                if (namespaceUri != null && namespaceUri.length() > 0) {
+                    dom.setSystemId(namespaceUri);
+                    results.put(namespaceUri, dom);
+                } else {
+                    results.put(suggestedFileName, dom);
+                }
+                return dom;
+            }
+        });
+        Map<String, Source> sources = new HashMap<>();
+        for (Map.Entry<String, DOMResult> result : results.entrySet()) {
+            Source source = new DOMSource(result.getValue().getNode());
+            sources.put(result.getKey(), source);
+        }
+
+        return sources;
+    }
+
+    public Map<String, Source> transformedSources() throws JAXBException, IOException, SAXException, TransformerException {
+        Map<String, Source> result = new HashMap<>();
+        for (Map.Entry<String, Source> sourceEntry : schemaSources().entrySet()) {
+            DOMResult domResult = new DOMResult();
+            transform(sourceEntry.getValue(), domResult);
+            result.put(sourceEntry.getKey(), new DOMSource(domResult.getNode()));
+        }
+        return result;
     }
 
     @Override
@@ -63,28 +108,77 @@ public class DocumentationAdder implements Supplier<Transformer> {
         return docs;
     }
     private static void put(Class<?> clazz, Map<String, String> docs, Set<Object> handled) {
+        if (clazz.isPrimitive()) {
+            return;
+        }
+        if (Number.class.isAssignableFrom(clazz)) {
+            return;
+        }
+        if (String.class.isAssignableFrom(clazz)) {
+            return;
+        }
         if (handled.add(clazz)) {
-            put(clazz.getAnnotation(XmlDocumentation.class), docs);
+            String parent = put(clazz.getAnnotations(), null, defaultName(clazz), docs);
             for (Field field : clazz.getDeclaredFields()) {
-                put(field.getAnnotation(XmlDocumentation.class), docs);
+                put(field.getAnnotations(), parent, defaultName(field), docs);
                 put(field.getType(), docs, handled);
             }
             for (Method method : clazz.getDeclaredMethods()) {
-                put(method.getAnnotation(XmlDocumentation.class), docs);
+                put(method.getAnnotations(), parent, defaultName(method), docs);
                 put(method.getReturnType(), docs, handled);
 
             }
         }
     }
+    private static String defaultName(Class<?> clazz) {
+        return clazz.getSimpleName();
+    }
 
-    private static void put(XmlDocumentation annot, Map<String, String> docs) {
-        if (annot != null) {
-            docs.put(qname(annot).toString(), annot.value());
+    private static String defaultName(Field field) {
+        return field.getName();
+    }
+    private static String defaultName(Method method) {
+        String name = method.getName();
+        if (name.startsWith("get")) {
+            return name.substring(3);
+        } else {
+            return name;
         }
     }
 
-    private static QName qname(XmlDocumentation annot) {
-        return new QName(annot.namespace(), annot.name());
+    private static String put(Annotation[] annots, String parent, String name, Map<String, String> docs) {
+        XmlDocumentation annot = null;
+        String type = "ELEMENT";
+        for (Annotation a : annots) {
+            if (a instanceof XmlDocumentation) {
+                annot = (XmlDocumentation) a;
+            }
+            if (a instanceof XmlAttribute) {
+                type = "ATTRIBUTE";
+                if (!((XmlAttribute) a).name().equals("##default")) {
+                    name = ((XmlAttribute) a).name();
+                }
+            }
+            if (a instanceof XmlElement) {
+                if (!((XmlElement) a).name().equals("##default")) {
+                    name = ((XmlElement) a).name();
+                }
+            }
+        }
+        if (annot != null) {
+            String result  = name(annot, parent, type, name);
+            docs.put(result, annot.value());
+            return result;
+        } else {
+            return name;
+        }
+
+    }
+
+    private static String name(XmlDocumentation annot, String parent, String type, String defaultName) {
+        String name =  annot.name().isEmpty() ? defaultName : annot.name();
+        String namespace = annot.namespace().isEmpty() ? "" : "{" + annot.namespace() + "}";
+        return (parent == null ? "" : (parent + "|" + type + "|") ) + namespace + name;
     }
 
     /**

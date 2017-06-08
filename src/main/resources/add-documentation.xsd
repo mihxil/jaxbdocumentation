@@ -23,22 +23,66 @@
   <xsl:template match="xs:complexType">
     <xsl:copy>
       <xsl:apply-templates select="@*"/>
-      <xsl:variable name="key">
-        <xsl:text>{</xsl:text>
-        <xsl:value-of select="/xs:schema/@targetNamespace"/>
-        <xsl:text>}</xsl:text>
-        <xsl:value-of select="@name"/>
-      </xsl:variable>
-      <xsl:variable name="documentation" select="$documentations/properties/entry[@key = $key]/text()" />
-      <xsl:if test="$documentation">
-        <xs:annotation>
-          <xs:documentation>
-            <xsl:value-of select="$documentation" />
-          </xs:documentation>
-        </xs:annotation>
-      </xsl:if>
+      <xsl:call-template name="annotation">
+        <xsl:with-param name="key">
+          <xsl:call-template name="complexTypeKey">
+            <xsl:with-param name="node" select="." />
+          </xsl:call-template>
+        </xsl:with-param>
+      </xsl:call-template>
       <xsl:apply-templates select="node()" />
     </xsl:copy>
   </xsl:template>
+  <xsl:template match="xs:attribute">
+    <xsl:copy>
+      <xsl:apply-templates select="@*"/>
+      <xsl:call-template name="annotation">
+        <xsl:with-param name="key">
+          <xsl:call-template name="complexTypeKey">
+            <xsl:with-param name="node" select="ancestor::xs:complexType" />
+          </xsl:call-template>
+          <xsl:text>|ATTRIBUTE|</xsl:text>
+          <xsl:value-of select="@name"/>
+        </xsl:with-param>
+      </xsl:call-template>
+      <xsl:apply-templates select="node()"/>
+    </xsl:copy>
+  </xsl:template>
+  <xsl:template match="xs:element">
+    <xsl:copy>
+      <xsl:apply-templates select="@*"/>
+      <xsl:call-template name="annotation">
+        <xsl:with-param name="key">
+          <xsl:call-template name="complexTypeKey">
+            <xsl:with-param name="node" select="ancestor::xs:complexType"/>
+          </xsl:call-template>
+          <xsl:text>|ELEMENT|</xsl:text>
+          <xsl:value-of select="@name"/>
+        </xsl:with-param>
+      </xsl:call-template>
+      <xsl:apply-templates select="node()"/>
+    </xsl:copy>
+  </xsl:template>
+
+  <xsl:template name="complexTypeKey">
+    <xsl:param name="node"/>
+    <xsl:text>{</xsl:text>
+    <xsl:value-of select="/xs:schema/@targetNamespace"/>
+    <xsl:text>}</xsl:text>
+    <xsl:value-of select="$node/@name"/>
+  </xsl:template>
+
+  <xsl:template name="annotation">
+    <xsl:param name="key" />
+    <xsl:variable name="documentation" select="$documentations/properties/entry[@key = $key]/text()"/>
+    <xsl:if test="$documentation">
+      <xs:annotation>
+        <xs:documentation>
+          <xsl:value-of select="$documentation"/>
+        </xs:documentation>
+      </xs:annotation>
+    </xsl:if>
+  </xsl:template>
+
 
 </xsl:stylesheet>
