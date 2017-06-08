@@ -31,11 +31,14 @@
       </xsl:variable>
       <xsl:variable name="documentation" select="$documentations/properties/entry[@key = $key]/text()" />
       <xsl:if test="$documentation">
-        <xs:documentation>
-          <xsl:value-of select="$documentation" />
-        </xs:documentation>
+        <xs:annotation>
+          <xs:documentation>
+            <xsl:value-of select="$documentation" />
+          </xs:documentation>
+        </xs:annotation>
       </xsl:if>
       <xsl:apply-templates select="node()" />
     </xsl:copy>
   </xsl:template>
+
 </xsl:stylesheet>

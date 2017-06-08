@@ -56,16 +56,20 @@ public class DocumentationAdderTest {
             collector.transform(sourceEntry.getValue(), new StreamResult(writer));
         }
         assertThat(writer.toString()).isXmlEqualTo("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-            " <xs:schema targetNamespace=\"http://meeuw.org/a\" version=\"1.0\"\n" +
+            "<xs:schema targetNamespace=\"http://meeuw.org/a\" version=\"1.0\"\n" +
             "    xmlns:tns=\"http://meeuw.org/a\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
             "    <xs:complexType name=\"a\">\n" +
-            "        <xs:documentation>some docu about a</xs:documentation>\n" +
+            "        <xs:annotation>\n" +
+            "            <xs:documentation>some docu about a</xs:documentation>\n" +
+            "        </xs:annotation>\n" +
             "        <xs:sequence>\n" +
             "            <xs:element form=\"qualified\" minOccurs=\"0\" name=\"b\" type=\"tns:b\"/>\n" +
             "        </xs:sequence>\n" +
             "    </xs:complexType>\n" +
             "    <xs:complexType name=\"b\">\n" +
-            "        <xs:documentation>docu about b</xs:documentation>\n" +
+            "        <xs:annotation>\n" +
+            "            <xs:documentation>docu about b</xs:documentation>\n" +
+            "        </xs:annotation>\n" +
             "        <xs:sequence/>\n" +
             "    </xs:complexType>\n" +
             "</xs:schema>");
