@@ -12,6 +12,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.SchemaOutputResolver;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -126,8 +127,21 @@ public class DocumentationAdder implements Supplier<Transformer> {
             for (Method method : clazz.getDeclaredMethods()) {
                 put(method.getAnnotations(), parent, defaultName(method), docs);
                 put(method.getReturnType(), docs, handled);
+            }
+            Class<?> superClass = clazz.getSuperclass();
+            while (superClass.getAnnotation(XmlTransient.class) != null) {
+                for (Field field : superClass.getDeclaredFields()) {
+                    put(field.getAnnotations(), parent, defaultName(field), docs);
+                    put(field.getType(), docs, handled);
+                }
+                for (Method method : superClass.getDeclaredMethods()) {
+                    put(method.getAnnotations(), parent, defaultName(method), docs);
+                    put(method.getReturnType(), docs, handled);
+                }
+                superClass = superClass.getSuperclass();
 
             }
+
         }
     }
     private static String defaultName(Class<?> clazz) {

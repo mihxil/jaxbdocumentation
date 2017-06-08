@@ -7,6 +7,7 @@ import java.util.Map;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
@@ -27,9 +28,17 @@ public class DocumentationAdderTest {
 
     public static final String NS = "http://meeuw.org/a";
 
+    @XmlTransient
+    public static class Parent {
+        @XmlAttribute
+        @XmlDocumentation(value = "documentation of parent attribute")
+        String parrentAttr;
+
+    }
+
     @XmlDocumentation(value = "some docu about a", namespace = NS, name = "a")
     @XmlType(namespace = NS)
-    public static class A {
+    public static class A extends Parent {
 
         @XmlAttribute
         @XmlDocumentation(value = "documentation of attribute")
@@ -73,6 +82,11 @@ public class DocumentationAdderTest {
             "                </xs:annotation>\n" +
             "            </xs:element>\n" +
             "        </xs:sequence>\n" +
+            "        <xs:attribute name=\"parrentAttr\" type=\"xs:string\">\n" +
+            "            <xs:annotation>\n" +
+            "                <xs:documentation>documentation of parent attribute</xs:documentation>\n" +
+            "            </xs:annotation>\n" +
+            "        </xs:attribute>\n" +
             "        <xs:attribute name=\"attr\" type=\"xs:string\">\n" +
             "            <xs:annotation>\n" +
             "                <xs:documentation>documentation of attribute</xs:documentation>\n" +
