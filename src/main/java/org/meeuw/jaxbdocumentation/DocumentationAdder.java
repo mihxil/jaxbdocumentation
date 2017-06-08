@@ -129,7 +129,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
                 put(method.getReturnType(), docs, handled);
             }
             Class<?> superClass = clazz.getSuperclass();
-            while (superClass.getAnnotation(XmlTransient.class) != null) {
+            while (superClass != null && superClass.getAnnotation(XmlTransient.class) != null) {
                 for (Field field : superClass.getDeclaredFields()) {
                     put(field.getAnnotations(), parent, defaultName(field), docs);
                     put(field.getType(), docs, handled);
