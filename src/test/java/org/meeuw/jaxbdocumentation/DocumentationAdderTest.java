@@ -1,11 +1,28 @@
-jaxb-documentation
-==================
+package org.meeuw.jaxbdocumentation;
 
-Makes it possible to create also xsd:documentation tags with JAXB.
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
 
-This is work in an early stage of development. About this is working now.
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.SchemaOutputResolver;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlType;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
-```java
+import org.junit.Test;
+import org.xml.sax.SAXException;
+
+import static org.assertj.core.api.Java6Assertions.assertThat;
+
 
 /**
  * @author Michiel Meeuwissen
@@ -55,5 +72,26 @@ public class DocumentationAdderTest {
 
     }
 
-```
 
+    protected Map<String, Source> schemaSources(Class... classes) throws JAXBException, IOException, SAXException {
+        JAXBContext context = JAXBContext.newInstance(classes);
+        final Map<String, DOMResult> results = new HashMap<>();
+        context.generateSchema(new SchemaOutputResolver() {
+            @Override
+            public Result createOutput(String namespaceUri, String suggestedFileName) throws IOException {
+                DOMResult dom = new DOMResult();
+                dom.setSystemId(namespaceUri);
+                results.put(namespaceUri, dom);
+                return dom;
+            }
+        });
+        Map<String, Source> sources = new HashMap<>();
+        for (Map.Entry<String, DOMResult> result : results.entrySet()) {
+            Source source = new DOMSource(result.getValue().getNode());
+            sources.put(result.getKey(), source);
+        }
+
+        return sources;
+    }
+
+}
