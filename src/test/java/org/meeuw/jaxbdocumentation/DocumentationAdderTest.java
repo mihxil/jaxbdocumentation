@@ -13,6 +13,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.stream.StreamResult;
 
 import org.junit.Test;
+import org.meeuw.xml.bind.annotation.XmlDocumentation;
 import org.xml.sax.SAXException;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
