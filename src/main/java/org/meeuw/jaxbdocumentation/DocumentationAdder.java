@@ -21,6 +21,7 @@ import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 
+import org.meeuw.xml.bind.annotation.XmlDocumentation;
 import org.xml.sax.SAXException;
 
 /**
@@ -109,12 +110,14 @@ public class DocumentationAdder implements Supplier<Transformer> {
         if (clazz.isPrimitive()) {
             return;
         }
-        if (clazz.getPackage().getName().startsWith("java.")) {
+        if (clazz.getPackage() != null && clazz.getPackage().getName().startsWith("java.")) {
             return;
         }
         if (collectContext.handled.add(clazz)) {
-            String parent = handle(clazz.getAnnotations(), null, defaultName(clazz), true, collectContext.docs);
+
             XmlAccessType accessType = getAccessType(clazz);
+
+            String parent = handle(clazz.getAnnotations(), null, defaultName(clazz), true, collectContext.docs);
             for (Field field : clazz.getDeclaredFields()) {
                 handleField(parent, field, accessType, collectContext);
             }
@@ -140,6 +143,9 @@ public class DocumentationAdder implements Supplier<Transformer> {
         return accessorType == null ? XmlAccessType.PUBLIC_MEMBER : accessorType.value();
     }
     private static void handleField(String parent, Field field, XmlAccessType accessType, CollectContext collectContext) {
+        if (Modifier.isStatic(field.getModifiers())) {
+            return;
+        }
         String defaultFieldName = field.getName();
         boolean implicit = false;
         switch (accessType) {
@@ -179,6 +185,9 @@ public class DocumentationAdder implements Supplier<Transformer> {
     }
 
     private static void handleMethod(String parent, Method method, XmlAccessType accessType, CollectContext collectContext) {
+        if (Modifier.isStatic(method.getModifiers())) {
+            return;
+        }
         boolean implicit = false;
         switch (accessType) {
             case PUBLIC_MEMBER:
@@ -203,7 +212,17 @@ public class DocumentationAdder implements Supplier<Transformer> {
     private static String defaultName(Class<?> clazz) {
         String simpleName = clazz.getSimpleName();
         String name = Character.toLowerCase(simpleName.charAt(0)) + simpleName.substring(1);
+
+
         String namespace = "";
+        Package pack = clazz.getPackage();
+        if (pack != null) {
+            XmlSchema schema = pack.getAnnotation(XmlSchema.class);
+            if (schema != null && !"##default".equals(schema.namespace())) {
+                namespace = "{" + schema.namespace() + "}";
+            }
+        }
+
         for (Annotation annotation : clazz.getAnnotations()) {
             if (annotation instanceof XmlType) {
                 XmlType xmlType = (XmlType) annotation;
