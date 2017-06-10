@@ -8,6 +8,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.xml.bind.JAXBContext;
@@ -34,11 +36,22 @@ public class DocumentationAdder implements Supplier<Transformer> {
 
     private static final String URI_FOR_DOCUMENTATIONS = "http://meeuw.org/documentations";
 
+    private static final Map<Class[], Map<String, String>> CACHE = new ConcurrentHashMap<>();
+
     private final Class<?>[] classes;
     private Transformer transformer;
+    private boolean useCache = false;
 
     public DocumentationAdder(Class<?>... classes) {
         this.classes = classes;
+    }
+
+    public boolean isUseCache() {
+        return useCache;
+    }
+
+    public void setUseCache(boolean useCache) {
+        this.useCache = useCache;
     }
 
     public void transform(Source source, Result out) throws TransformerException {
@@ -98,12 +111,19 @@ public class DocumentationAdder implements Supplier<Transformer> {
         return transformer;
     }
 
-    protected static Map<String, String> createDocumentations(Class<?>... classes) throws IOException, ParserConfigurationException, SAXException {
-        CollectContext collectContext = new CollectContext();
-        for (Class<?> clazz : classes) {
-            handleClass(clazz, collectContext);
+    protected Map<String, String> createDocumentations(Class<?>... classes) throws IOException, ParserConfigurationException, SAXException {
+        Function<Class[], Map<String, String>> creator = (cc) -> {
+            CollectContext collectContext = new CollectContext();
+            for (Class<?> clazz : cc) {
+                handleClass(clazz, collectContext);
+            }
+            return collectContext.docs;
+        };
+        if (useCache) {
+            return CACHE.computeIfAbsent(classes, creator);
+        } else {
+            return creator.apply(classes);
         }
-        return collectContext.docs;
     }
     private static void handleClass(Class<?> clazz, CollectContext collectContext) {
         if (clazz.isPrimitive()) {
