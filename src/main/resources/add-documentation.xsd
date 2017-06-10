@@ -23,7 +23,7 @@
   <xsl:template match="xs:complexType">
     <xsl:copy>
       <xsl:apply-templates select="@*"/>
-      <xsl:call-template name="annotation">
+      <xsl:call-template name="generateannotation">
         <xsl:with-param name="key">
           <xsl:call-template name="complexTypeKey">
             <xsl:with-param name="node" select="." />
@@ -36,7 +36,7 @@
   <xsl:template match="xs:attribute">
     <xsl:copy>
       <xsl:apply-templates select="@*"/>
-      <xsl:call-template name="annotation">
+      <xsl:call-template name="generateannotation">
         <xsl:with-param name="key">
           <xsl:call-template name="complexTypeKey">
             <xsl:with-param name="node" select="ancestor::xs:complexType" />
@@ -51,7 +51,7 @@
   <xsl:template match="xs:element">
     <xsl:copy>
       <xsl:apply-templates select="@*"/>
-      <xsl:call-template name="annotation">
+      <xsl:call-template name="generateannotation">
         <xsl:with-param name="key">
           <xsl:call-template name="complexTypeKey">
             <xsl:with-param name="node" select="ancestor::xs:complexType"/>
@@ -72,7 +72,7 @@
     <xsl:value-of select="$node/@name"/>
   </xsl:template>
 
-  <xsl:template name="annotation">
+  <xsl:template name="generateannotation">
     <xsl:param name="key" />
     <xsl:variable name="documentation" select="$documentations/properties/entry[@key = $key]/text()"/>
     <xsl:if test="$documentation">
