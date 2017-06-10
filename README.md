@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/mihxil/jaxbdocumentation.png?)](https://travis-ci.org/mihxil/jaxbdocumentation)
+
 jaxb-documentation
 ==================
 
