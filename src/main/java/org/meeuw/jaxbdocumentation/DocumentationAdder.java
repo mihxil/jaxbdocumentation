@@ -2,7 +2,6 @@ package org.meeuw.jaxbdocumentation;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -37,7 +36,6 @@ public class DocumentationAdder implements Supplier<Transformer> {
 
     private final Class<?>[] classes;
     private Transformer transformer;
-    private File tempFile;
 
     public DocumentationAdder(Class<?>... classes) {
         this.classes = classes;
@@ -61,6 +59,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
                     dom.setSystemId(namespaceUri);
                     results.put(namespaceUri, dom);
                 } else {
+                    dom.setSystemId(suggestedFileName);
                     results.put(suggestedFileName, dom);
                 }
                 return dom;
@@ -143,7 +142,11 @@ public class DocumentationAdder implements Supplier<Transformer> {
         return accessorType == null ? XmlAccessType.PUBLIC_MEMBER : accessorType.value();
     }
     private static void handleField(String parent, Field field, XmlAccessType accessType, CollectContext collectContext) {
+
         if (Modifier.isStatic(field.getModifiers())) {
+            if (Enum.class.isAssignableFrom(field.getType())) {
+                handleEnumValue(parent, field, collectContext);
+            }
             return;
         }
         String defaultFieldName = field.getName();
@@ -164,6 +167,16 @@ public class DocumentationAdder implements Supplier<Transformer> {
         );
         // recurse
         handleClass(field.getType(), collectContext);
+    }
+
+    private static void handleEnumValue(String parent, Field field, CollectContext collectContext) {
+        String defaultFieldName = field.getName();
+        XmlDocumentation annot = field.getAnnotation(XmlDocumentation.class);
+        if (annot != null) {
+            String key = name(annot, parent, "ENUMERATION", defaultFieldName);
+            collectContext.docs.put(key, annot.value());
+        }
+
     }
 
     private static void recurseXmlElementAnnotations(Collection<XmlElement> xmlElements, CollectContext collectContext) {

@@ -64,6 +64,21 @@
       <xsl:apply-templates select="node()"/>
     </xsl:copy>
   </xsl:template>
+  <xsl:template match="xs:enumeration">
+    <xsl:copy>
+      <xsl:apply-templates select="@*"/>
+      <xsl:call-template name="generateannotation">
+        <xsl:with-param name="key">
+          <xsl:call-template name="typeKey">
+            <xsl:with-param name="node" select="ancestor::xs:simpleType"/>
+          </xsl:call-template>
+          <xsl:text>|ENUMERATION|</xsl:text>
+          <xsl:value-of select="@value"/>
+        </xsl:with-param>
+      </xsl:call-template>
+      <xsl:apply-templates select="node()"/>
+    </xsl:copy>
+  </xsl:template>
 
   <xsl:template name="typeKey">
     <xsl:param name="node"/>

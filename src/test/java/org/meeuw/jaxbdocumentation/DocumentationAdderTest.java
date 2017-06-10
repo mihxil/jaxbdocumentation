@@ -96,6 +96,7 @@ public class DocumentationAdderTest {
     @XmlDocumentation("Documentation about some enum")
     public enum SomeEnum {
         x,
+        @XmlDocumentation("documentation for enum value")
         y,
         z
 
@@ -167,12 +168,54 @@ public class DocumentationAdderTest {
             "        </xs:annotation>\n" +
             "        <xs:restriction base=\"xs:string\">\n" +
             "            <xs:enumeration value=\"x\"/>\n" +
-            "            <xs:enumeration value=\"y\"/>\n" +
+            "            <xs:enumeration value=\"y\">\n" +
+            "                <xs:annotation>\n" +
+            "                    <xs:documentation>documentation for enum value</xs:documentation>\n" +
+            "                </xs:annotation>\n" +
+            "            </xs:enumeration>\n" +
             "            <xs:enumeration value=\"z\"/>\n" +
             "        </xs:restriction>\n" +
             "    </xs:simpleType>\n" +
             "</xs:schema>");
 
+    }
+
+
+    @XmlType(namespace = NS)
+    public static class EnumValueTest {
+        @XmlAttribute
+        SomeEnum someEnum;
+    }
+    @Test
+    public void enumValue() throws JAXBException, IOException, SAXException, TransformerException {
+        DocumentationAdder collector = new DocumentationAdder(EnumValueTest.class);
+        StringWriter writer = new StringWriter();
+
+        for (Map.Entry<String, Source> sourceEntry : collector.schemaSources().entrySet()) {
+            collector.transform(sourceEntry.getValue(), new StreamResult(writer));
+        }
+        assertThat(writer.toString()).isXmlEqualTo("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+            "<xs:schema targetNamespace=\"http://meeuw.org/a\" version=\"1.0\"\n" +
+            "    xmlns:tns=\"http://meeuw.org/a\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+            "    <xs:complexType name=\"enumValueTest\">\n" +
+            "        <xs:sequence/>\n" +
+            "        <xs:attribute name=\"someEnum\" type=\"tns:someEnum\"/>\n" +
+            "    </xs:complexType>\n" +
+            "    <xs:simpleType name=\"someEnum\">\n" +
+            "        <xs:annotation>\n" +
+            "            <xs:documentation>Documentation about some enum</xs:documentation>\n" +
+            "        </xs:annotation>\n" +
+            "        <xs:restriction base=\"xs:string\">\n" +
+            "            <xs:enumeration value=\"x\"/>\n" +
+            "            <xs:enumeration value=\"y\">\n" +
+            "                <xs:annotation>\n" +
+            "                    <xs:documentation>documentation for enum value</xs:documentation>\n" +
+            "                </xs:annotation>\n" +
+            "            </xs:enumeration>\n" +
+            "            <xs:enumeration value=\"z\"/>\n" +
+            "        </xs:restriction>\n" +
+            "    </xs:simpleType>\n" +
+            "</xs:schema>");
     }
 
 
