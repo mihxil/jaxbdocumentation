@@ -2,13 +2,11 @@ package org.meeuw.jaxbdocumentation;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.XmlType;
+import javax.xml.bind.annotation.*;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
@@ -36,7 +34,7 @@ public class DocumentationAdderTest {
 
     }
 
-    @XmlDocumentation(value = "some docu about a", namespace = NS, name = "a")
+    @XmlDocumentation(value = "some docu about a")
     @XmlType(namespace = NS)
     public static class A extends Parent {
 
@@ -51,6 +49,30 @@ public class DocumentationAdderTest {
         @XmlElement(namespace = NS)
         @XmlDocumentation(value = "some docu of element b in a")
         B b;
+
+        @XmlElements(
+            @XmlElement(type = C.class)
+        )
+        @XmlDocumentation(value = "some docu about this list")
+        List<Object> list;
+
+        @XmlTransient
+        public String getAttr() {
+            return attr;
+        }
+
+        public void setAttr(String attr) {
+            this.attr = attr;
+        }
+
+        @XmlTransient
+        public Integer getIntAttribute() {
+            return intAttribute;
+        }
+
+        public void setIntAttribute(Integer intAttribute) {
+            this.intAttribute = intAttribute;
+        }
     }
 
     @XmlDocumentation(value = "docu about b", namespace = NS, name = "b")
@@ -59,6 +81,11 @@ public class DocumentationAdderTest {
 
     }
 
+    @XmlDocumentation(value = "docu about c")
+    @XmlType(namespace = NS)
+    public static class C {
+
+    }
 
     @Test
     public void addDocumentation() throws JAXBException, IOException, SAXException, TransformerException, ParserConfigurationException {
@@ -81,6 +108,11 @@ public class DocumentationAdderTest {
             "                    <xs:documentation>some docu of element b in a</xs:documentation>\n" +
             "                </xs:annotation>\n" +
             "            </xs:element>\n" +
+            "            <xs:element maxOccurs=\"unbounded\" minOccurs=\"0\" name=\"list\" type=\"tns:c\">\n" +
+            "                <xs:annotation>\n" +
+            "                    <xs:documentation>some docu about this list</xs:documentation>\n" +
+            "                </xs:annotation>\n" +
+            "            </xs:element>\n" +
             "        </xs:sequence>\n" +
             "        <xs:attribute name=\"parrentAttr\" type=\"xs:string\">\n" +
             "            <xs:annotation>\n" +
@@ -101,6 +133,12 @@ public class DocumentationAdderTest {
             "    <xs:complexType name=\"b\">\n" +
             "        <xs:annotation>\n" +
             "            <xs:documentation>docu about b</xs:documentation>\n" +
+            "        </xs:annotation>\n" +
+            "        <xs:sequence/>\n" +
+            "    </xs:complexType>\n" +
+            "    <xs:complexType name=\"c\">\n" +
+            "        <xs:annotation>\n" +
+            "            <xs:documentation>docu about c</xs:documentation>\n" +
             "        </xs:annotation>\n" +
             "        <xs:sequence/>\n" +
             "    </xs:complexType>\n" +

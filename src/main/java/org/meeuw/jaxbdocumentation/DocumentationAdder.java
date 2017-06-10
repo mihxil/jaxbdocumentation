@@ -1,28 +1,26 @@
 package org.meeuw.jaxbdocumentation;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Supplier;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.SchemaOutputResolver;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.bind.annotation.*;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
@@ -101,51 +99,123 @@ public class DocumentationAdder implements Supplier<Transformer> {
     }
 
     protected static Map<String, String> createDocumentations(Class<?>... classes) throws IOException, ParserConfigurationException, SAXException {
-        Map<String, String> docs = new HashMap<>();
-        Set<Object> handled = new HashSet<>();
+        CollectContext collectContext = new CollectContext();
         for (Class<?> clazz : classes) {
-            put(clazz, docs, handled);
+            handleClass(clazz, collectContext);
         }
-        return docs;
+        return collectContext.docs;
     }
-    private static void put(Class<?> clazz, Map<String, String> docs, Set<Object> handled) {
+    private static void handleClass(Class<?> clazz, CollectContext collectContext) {
         if (clazz.isPrimitive()) {
             return;
         }
-        if (Number.class.isAssignableFrom(clazz)) {
+        if (clazz.getPackage().getName().startsWith("java.")) {
             return;
         }
-        if (String.class.isAssignableFrom(clazz)) {
-            return;
-        }
-        if (handled.add(clazz)) {
-            String parent = put(clazz.getAnnotations(), null, defaultName(clazz), docs);
+        if (collectContext.handled.add(clazz)) {
+            String parent = handle(clazz.getAnnotations(), null, defaultName(clazz), true, collectContext.docs);
+            XmlAccessType accessType = getAccessType(clazz);
             for (Field field : clazz.getDeclaredFields()) {
-                put(field.getAnnotations(), parent, defaultName(field), docs);
-                put(field.getType(), docs, handled);
+                handleField(parent, field, accessType, collectContext);
             }
             for (Method method : clazz.getDeclaredMethods()) {
-                put(method.getAnnotations(), parent, defaultName(method), docs);
-                put(method.getReturnType(), docs, handled);
+                handleMethod(parent, method, accessType, collectContext);
             }
             Class<?> superClass = clazz.getSuperclass();
             while (superClass != null && superClass.getAnnotation(XmlTransient.class) != null) {
+                XmlAccessType superAccessType = getAccessType(superClass);
                 for (Field field : superClass.getDeclaredFields()) {
-                    put(field.getAnnotations(), parent, defaultName(field), docs);
-                    put(field.getType(), docs, handled);
+                    handleField(parent, field, superAccessType, collectContext);
                 }
                 for (Method method : superClass.getDeclaredMethods()) {
-                    put(method.getAnnotations(), parent, defaultName(method), docs);
-                    put(method.getReturnType(), docs, handled);
+                    handleMethod(parent, method, superAccessType, collectContext);
                 }
                 superClass = superClass.getSuperclass();
-
             }
 
         }
     }
+    private static XmlAccessType getAccessType(Class<?> clazz) {
+        XmlAccessorType accessorType = clazz.getAnnotation(XmlAccessorType.class);
+        return accessorType == null ? XmlAccessType.PUBLIC_MEMBER : accessorType.value();
+    }
+    private static void handleField(String parent, Field field, XmlAccessType accessType, CollectContext collectContext) {
+        String defaultFieldName = field.getName();
+        boolean implicit = false;
+        switch (accessType) {
+            case PUBLIC_MEMBER:
+                if (!Modifier.isPublic(field.getModifiers())) {
+                    break;
+                }
+            case FIELD:
+                implicit = true;
+                break;
+        }
+        handle(field.getAnnotations(), parent, defaultFieldName, implicit, collectContext.docs);
+        recurseXmlElementAnnotations(
+            collectXmlElements(field.getAnnotation(XmlElement.class), field.getAnnotation(XmlElements.class)),
+            collectContext
+        );
+        // recurse
+        handleClass(field.getType(), collectContext);
+    }
+
+    private static void recurseXmlElementAnnotations(Collection<XmlElement> xmlElements, CollectContext collectContext) {
+        for (XmlElement xmlElement : xmlElements) {
+            if (xmlElement.type() != XmlElement.DEFAULT.class) {
+                handleClass(xmlElement.type(), collectContext);
+            }
+        }
+    }
+    private static List<XmlElement> collectXmlElements(XmlElement xmlElement, XmlElements xmlElements) {
+        List<XmlElement> result = new ArrayList<>();
+        if (xmlElement != null) {
+            result.add(xmlElement);
+        }
+        if (xmlElements != null) {
+            result.addAll(Arrays.asList(xmlElements.value()));
+        }
+        return result;
+    }
+
+    private static void handleMethod(String parent, Method method, XmlAccessType accessType, CollectContext collectContext) {
+        boolean implicit = false;
+        switch (accessType) {
+            case PUBLIC_MEMBER:
+                if (!Modifier.isPublic(method.getModifiers())) {
+                    break;
+                }
+            case PROPERTY:
+                implicit = true;
+                break;
+        }
+        String defaultFieldName = defaultName(method);
+
+        handle(method.getAnnotations(), parent, defaultFieldName, implicit, collectContext.docs);
+        recurseXmlElementAnnotations(
+            collectXmlElements(method.getAnnotation(XmlElement.class), method.getAnnotation(XmlElements.class)),
+            collectContext
+        );
+        // recurse
+        handleClass(method.getReturnType(), collectContext);
+    }
+
     private static String defaultName(Class<?> clazz) {
-        return clazz.getSimpleName();
+        String simpleName = clazz.getSimpleName();
+        String name = Character.toLowerCase(simpleName.charAt(0)) + simpleName.substring(1);
+        String namespace = "";
+        for (Annotation annotation : clazz.getAnnotations()) {
+            if (annotation instanceof XmlType) {
+                XmlType xmlType = (XmlType) annotation;
+                if (!"##default".equals(xmlType.namespace())) {
+                    namespace = "{" + xmlType.namespace() + "}";
+                }
+                if (!"##default".equals(xmlType.name())) {
+                    name = xmlType.name();
+                }
+            }
+        }
+        return namespace + name;
     }
 
     private static String defaultName(Field field) {
@@ -160,33 +230,40 @@ public class DocumentationAdder implements Supplier<Transformer> {
         }
     }
 
-    private static String put(Annotation[] annots, String parent, String name, Map<String, String> docs) {
+    private static String handle(Annotation[] annots, String parent, String name, boolean implicit, Map<String, String> docs) {
         XmlDocumentation annot = null;
         String type = "ELEMENT";
+        boolean explicit = false;
         for (Annotation a : annots) {
             if (a instanceof XmlDocumentation) {
                 annot = (XmlDocumentation) a;
             }
+            if (a instanceof XmlTransient) {
+                return null;
+            }
             if (a instanceof XmlAttribute) {
+                explicit = true;
                 type = "ATTRIBUTE";
                 if (!((XmlAttribute) a).name().equals("##default")) {
                     name = ((XmlAttribute) a).name();
                 }
             }
             if (a instanceof XmlElement) {
+                explicit = true;
                 if (!((XmlElement) a).name().equals("##default")) {
                     name = ((XmlElement) a).name();
                 }
             }
+            if (a instanceof XmlElements) {
+                explicit = true;
+            }
         }
-        if (annot != null) {
+        if (annot != null && (implicit || explicit)) {
             String result  = name(annot, parent, type, name);
             docs.put(result, annot.value());
             return result;
-        } else {
-            return name;
         }
-
+        return null;
     }
 
     private static String name(XmlDocumentation annot, String parent, String type, String defaultName) {
@@ -205,19 +282,9 @@ public class DocumentationAdder implements Supplier<Transformer> {
         properties.putAll(map);
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         properties.storeToXML(stream, null);
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder parser = factory.newDocumentBuilder();
-        parser.setEntityResolver(new EntityResolver() {
-            @Override
-            public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-                if ("http://java.sun.com/dtd/properties.dtd".equals(systemId)) {
-                    InputStream input = getClass().getResourceAsStream("/java/util/properties.dtd");
-                    return new InputSource(input);
-                }
-                return null;
-            }
-        });
-        return new StreamSource(new ByteArrayInputStream(stream.toByteArray()));
+        StreamSource source = new StreamSource(new ByteArrayInputStream(stream.toByteArray()));
+        //source.setSystemId(URI_FOR_DOCUMENTATIONS);
+        return source;
     }
 
 
@@ -240,5 +307,9 @@ public class DocumentationAdder implements Supplier<Transformer> {
                 return null;
             }
         }
+    }
+    private static class CollectContext {
+        final Map<String, String> docs = new HashMap<>();
+        final Set<Object> handled = new HashSet<>();
     }
 }
