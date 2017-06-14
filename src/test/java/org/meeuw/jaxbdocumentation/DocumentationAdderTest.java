@@ -194,7 +194,7 @@ public class DocumentationAdderTest {
         for (Map.Entry<String, Source> sourceEntry : collector.schemaSources().entrySet()) {
             collector.transform(sourceEntry.getValue(), new StreamResult(writer));
         }
-        assertThat(writer.toString()).isXmlEqualTo("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+        assertThat(writer.toString()).isXmlEqualTo("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<xs:schema targetNamespace=\"http://meeuw.org/a\" version=\"1.0\"\n" +
             "    xmlns:tns=\"http://meeuw.org/a\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
             "    <xs:complexType name=\"enumValueTest\">\n" +
