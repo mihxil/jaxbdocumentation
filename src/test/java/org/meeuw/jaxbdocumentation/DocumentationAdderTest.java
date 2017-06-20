@@ -107,7 +107,7 @@ public class DocumentationAdderTest {
         DocumentationAdder collector = new DocumentationAdder(A.class);
         StringWriter writer = new StringWriter();
 
-        for (Map.Entry<String, Source> sourceEntry : collector.schemaSources().entrySet()) {
+        for (Map.Entry<String, Source> sourceEntry : Utils.schemaSources(collector.getClasses()).entrySet()) {
             collector.transform(sourceEntry.getValue(), new StreamResult(writer));
         }
         assertThat(writer.toString()).isXmlEqualTo("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -191,7 +191,7 @@ public class DocumentationAdderTest {
         DocumentationAdder collector = new DocumentationAdder(EnumValueTest.class);
         StringWriter writer = new StringWriter();
 
-        for (Map.Entry<String, Source> sourceEntry : collector.schemaSources().entrySet()) {
+        for (Map.Entry<String, Source> sourceEntry : Utils.schemaSources(collector.getClasses()).entrySet()) {
             collector.transform(sourceEntry.getValue(), new StreamResult(writer));
         }
         assertThat(writer.toString()).isXmlEqualTo("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

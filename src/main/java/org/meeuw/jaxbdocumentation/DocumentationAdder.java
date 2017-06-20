@@ -12,21 +12,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.SchemaOutputResolver;
 import javax.xml.bind.annotation.*;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
-import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 
 import org.meeuw.xml.bind.annotation.XmlDocumentation;
 import org.xml.sax.SAXException;
 
 /**
- * Supplies a {@link Transformer} that addes xs:documentation tags to an existing XSD.
+ * Supplies a {@link Transformer} that adds xs:documentation tags to an existing XSD.
  * The contents of the documentation tags is determined by introspecting while looking for {@link @XmlDocumentation} tags.
  *
  * @author Michiel Meeuwissen
@@ -58,47 +53,9 @@ public class DocumentationAdder implements Supplier<Transformer> {
         get().transform(source, out);
     }
 
-    /**
-     * Returns the associated XSD schema's as a map of {@link Source}'s. The key is the namespace.
-     */
-    public Map<String, Source> schemaSources() throws JAXBException, IOException, SAXException {
-        JAXBContext context = JAXBContext.newInstance(classes);
-        final Map<String, DOMResult> results = new HashMap<>();
-        context.generateSchema(new SchemaOutputResolver() {
-            @Override
-            public Result createOutput(String namespaceUri, String suggestedFileName) throws IOException {
-                DOMResult dom = new DOMResult();
-                if (namespaceUri != null && namespaceUri.length() > 0) {
-                    dom.setSystemId(namespaceUri);
-                    results.put(namespaceUri, dom);
-                } else {
-                    dom.setSystemId(suggestedFileName);
-                    results.put(suggestedFileName, dom);
-                }
-                return dom;
-            }
-        });
-        Map<String, Source> sources = new HashMap<>();
-        for (Map.Entry<String, DOMResult> result : results.entrySet()) {
-            Source source = new DOMSource(result.getValue().getNode());
-            sources.put(result.getKey(), source);
-        }
-
-        return sources;
-    }
-
-    public Map<String, Source> transformedSources() throws JAXBException, IOException, SAXException, TransformerException {
-        Map<String, Source> result = new HashMap<>();
-        for (Map.Entry<String, Source> sourceEntry : schemaSources().entrySet()) {
-            DOMResult domResult = new DOMResult();
-            transform(sourceEntry.getValue(), domResult);
-            result.put(sourceEntry.getKey(), new DOMSource(domResult.getNode()));
-        }
-        return result;
-    }
 
     @Override
-    public  Transformer get() {
+    public Transformer get() {
         if (transformer == null) {
             try {
                 TransformerFactory transFact = TransformerFactory.newInstance();
@@ -109,6 +66,11 @@ public class DocumentationAdder implements Supplier<Transformer> {
             }
         }
         return transformer;
+    }
+
+
+    public Class<?>[] getClasses() {
+        return classes;
     }
 
     protected Map<String, String> createDocumentations(Class<?>... classes) throws IOException, ParserConfigurationException, SAXException {
