@@ -24,12 +24,12 @@ public class Utils {
     /**
      * Returns XSD schema's as a map of {@link Source}'s. The key is the namespace.
      */
-    public static Map<String, Source> schemaSources(Class<?>... classes) throws JAXBException, IOException, SAXException {
+    public static Map<String, Source> schemaSources(Class<?>... classes) throws JAXBException, IOException {
         JAXBContext context = JAXBContext.newInstance(classes);
         final Map<String, DOMResult> results = new HashMap<>();
         context.generateSchema(new SchemaOutputResolver() {
             @Override
-            public Result createOutput(String namespaceUri, String suggestedFileName) throws IOException {
+            public Result createOutput(String namespaceUri, String suggestedFileName) {
                 DOMResult dom = new DOMResult();
                 if (namespaceUri != null && namespaceUri.length() > 0) {
                     dom.setSystemId(namespaceUri);

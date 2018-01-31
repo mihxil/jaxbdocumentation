@@ -9,14 +9,12 @@ import java.util.Map;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.annotation.*;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.stream.StreamResult;
 
 import org.junit.Test;
 import org.meeuw.xml.bind.annotation.XmlDocumentation;
-import org.xml.sax.SAXException;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 
@@ -119,8 +117,9 @@ public class DocumentationAdderTest {
 
 
     @Test
-    public void addDocumentation() throws JAXBException, IOException, SAXException, TransformerException, ParserConfigurationException {
+    public void addDocumentation() throws JAXBException, IOException, TransformerException {
         DocumentationAdder collector = new DocumentationAdder(A.class);
+        //collector.setXmlStyleSheet("xs3p.xsl");
         StringWriter writer = new StringWriter();
 
         for (Map.Entry<String, Source> sourceEntry : Utils.schemaSources(collector.getClasses()).entrySet()) {
@@ -220,7 +219,7 @@ public class DocumentationAdderTest {
         SomeEnum someEnum;
     }
     @Test
-    public void enumValue() throws JAXBException, IOException, SAXException, TransformerException {
+    public void enumValue() throws JAXBException, IOException, TransformerException {
         DocumentationAdder collector = new DocumentationAdder(EnumValueTest.class);
         StringWriter writer = new StringWriter();
 

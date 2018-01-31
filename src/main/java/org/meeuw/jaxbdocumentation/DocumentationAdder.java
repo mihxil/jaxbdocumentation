@@ -13,12 +13,10 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.xml.bind.annotation.*;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
 import javax.xml.transform.stream.StreamSource;
 
 import org.meeuw.xml.bind.annotation.XmlDocumentation;
-import org.xml.sax.SAXException;
 
 /**
  * Supplies a {@link Transformer} that adds xs:documentation tags to an existing XSD.
@@ -36,6 +34,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
     private final Class<?>[] classes;
     private Transformer transformer;
     private boolean useCache = false;
+    private String xmlStyleSheet = null;
 
     public DocumentationAdder(Class<?>... classes) {
         this.classes = classes;
@@ -49,6 +48,14 @@ public class DocumentationAdder implements Supplier<Transformer> {
         this.useCache = useCache;
     }
 
+    public String getXmlStyleSheet() {
+        return xmlStyleSheet;
+    }
+
+    public void setXmlStyleSheet(String xmlStyleSheet) {
+        this.xmlStyleSheet = xmlStyleSheet;
+    }
+
     public void transform(Source source, Result out) throws TransformerException {
         get().transform(source, out);
     }
@@ -59,9 +66,13 @@ public class DocumentationAdder implements Supplier<Transformer> {
         if (transformer == null) {
             try {
                 TransformerFactory transFact = TransformerFactory.newInstance();
-                transformer = transFact.newTransformer(new StreamSource(DocumentationAdder.class.getResourceAsStream("/add-documentation.xsd")));
+                transformer = transFact.newTransformer(
+                    new StreamSource(DocumentationAdder.class.getResourceAsStream("/add-documentation.xsd")));
                 transformer.setURIResolver(new DocumentationResolver(createDocumentations(classes)));
-            } catch (TransformerConfigurationException | ParserConfigurationException | SAXException | IOException e) {
+                if (xmlStyleSheet != null) {
+                    transformer.setParameter("xmlStyleSheet", this.xmlStyleSheet);
+                }
+            } catch (TransformerConfigurationException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -73,7 +84,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
         return classes;
     }
 
-    protected Map<String, String> createDocumentations(Class<?>... classes) throws IOException, ParserConfigurationException, SAXException {
+    protected Map<String, String> createDocumentations(Class<?>... classes) {
         Function<Class[], Map<String, String>> creator = (cc) -> {
             CollectContext collectContext = new CollectContext();
             for (Class<?> clazz : cc) {
@@ -291,7 +302,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
      * (a node-set xslt parameter would have been a more logical idea, but the default xslt parser of the jvm's don't get that)
      *
      */
-    private static StreamSource toDocument(Map<String, String> map) throws IOException, ParserConfigurationException, SAXException {
+    private static StreamSource toDocument(Map<String, String> map) throws IOException {
         Properties properties = new Properties();
         properties.putAll(map);
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -314,7 +325,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
             if (URI_FOR_DOCUMENTATIONS.equals(href)) {
                 try {
                     return DocumentationAdder.toDocument(docs);
-                } catch (IOException | ParserConfigurationException | SAXException e) {
+                } catch (IOException e) {
                     throw new TransformerException(e);
                 }
             } else {
