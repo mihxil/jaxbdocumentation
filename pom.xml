@@ -5,7 +5,7 @@
   <groupId>org.meeuw</groupId>
   <artifactId>jaxb-documentation</artifactId>
 
-  <version>0.3-SNAPSHOT</version>
+  <version>0.3</version>
   <url>https://github.com/mihxil/jaxbdocumetnation</url>
 
   <name>jaxb-documentation</name>
@@ -61,7 +61,7 @@
     <connection>scm:git:git://github.com/mihxil/jaxbdocumentation.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/mihxil/jaxbdocumentation.git</developerConnection>
     <url>https://github.com/mihxil/jaxbdocumentation</url>
-    <tag>HEAD</tag>
+    <tag>0.3</tag>
   </scm>
 
   <distributionManagement>
