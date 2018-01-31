@@ -1,5 +1,7 @@
 package org.meeuw.jaxbdocumentation;
 
+import lombok.Data;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
@@ -61,6 +63,10 @@ public class DocumentationAdderTest {
         @XmlDocumentation(value = "some docu about this list")
         List<Object> list;
 
+        @XmlElement
+        @XmlDocumentation("Documentation for lombok element")
+        WithLombok withLombok;
+
         @XmlTransient
         public String getAttr() {
             return attr;
@@ -102,6 +108,16 @@ public class DocumentationAdderTest {
 
     }
 
+    @XmlType(namespace = NS)
+    @XmlAccessorType(XmlAccessType.FIELD)
+    @XmlDocumentation("Documentation about some class annotated with lombok")
+    @Data
+    public static class WithLombok {
+        @XmlDocumentation("about a")
+        String value;
+    }
+
+
     @Test
     public void addDocumentation() throws JAXBException, IOException, SAXException, TransformerException, ParserConfigurationException {
         DocumentationAdder collector = new DocumentationAdder(A.class);
@@ -133,6 +149,11 @@ public class DocumentationAdderTest {
             "                    <xs:documentation>some docu about this list</xs:documentation>\n" +
             "                </xs:annotation>\n" +
             "            </xs:element>\n" +
+            "            <xs:element minOccurs=\"0\" name=\"withLombok\" type=\"tns:withLombok\">\n" +
+            "                <xs:annotation>\n" +
+            "                    <xs:documentation>Documentation for lombok element</xs:documentation>\n" +
+            "                </xs:annotation>\n" +
+            "            </xs:element>\n" +
             "        </xs:sequence>\n" +
             "        <xs:attribute name=\"parrentAttr\" type=\"xs:string\">\n" +
             "            <xs:annotation>\n" +
@@ -161,6 +182,18 @@ public class DocumentationAdderTest {
             "            <xs:documentation>docu about c</xs:documentation>\n" +
             "        </xs:annotation>\n" +
             "        <xs:sequence/>\n" +
+            "    </xs:complexType>\n" +
+            "    <xs:complexType name=\"withLombok\">\n" +
+            "        <xs:annotation>\n" +
+            "            <xs:documentation>Documentation about some class annotated with lombok</xs:documentation>\n" +
+            "        </xs:annotation>\n" +
+            "        <xs:sequence>\n" +
+            "            <xs:element minOccurs=\"0\" name=\"value\" type=\"xs:string\">\n" +
+            "                <xs:annotation>\n" +
+            "                    <xs:documentation>about a</xs:documentation>\n" +
+            "                </xs:annotation>\n" +
+            "            </xs:element>\n" +
+            "        </xs:sequence>\n" +
             "    </xs:complexType>\n" +
             "    <xs:simpleType name=\"someEnum\">\n" +
             "        <xs:annotation>\n" +
