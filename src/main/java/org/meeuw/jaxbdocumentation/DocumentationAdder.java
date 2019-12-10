@@ -22,6 +22,8 @@ import org.meeuw.xml.bind.annotation.XmlDocumentation;
  * Supplies a {@link Transformer} that adds xs:documentation tags to an existing XSD.
  * The contents of the documentation tags is determined by introspecting while looking for {@link @XmlDocumentation} tags.
  *
+ * The transformer is an actual XSLT `add-documentation.xslt`, which combines the information collected via introspection with the original XSD XML.
+ *
  * @author Michiel Meeuwissen
  * @since 0.1
  */
@@ -29,7 +31,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
 
     private static final String URI_FOR_DOCUMENTATIONS = "http://meeuw.org/documentations";
 
-    private static final Map<Class[], Map<String, String>> CACHE = new ConcurrentHashMap<>();
+    private static final Map<Class<?>[], Map<String, String>> CACHE = new ConcurrentHashMap<>();
 
     private final Class<?>[] classes;
     private Transformer transformer;
@@ -67,7 +69,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
             try {
                 TransformerFactory transFact = TransformerFactory.newInstance();
                 transformer = transFact.newTransformer(
-                    new StreamSource(DocumentationAdder.class.getResourceAsStream("/add-documentation.xsd")));
+                    new StreamSource(DocumentationAdder.class.getResourceAsStream("/add-documentation.xslt")));
                 transformer.setURIResolver(new DocumentationResolver(createDocumentations(classes)));
                 if (xmlStyleSheet != null) {
                     transformer.setParameter("xmlStyleSheet", this.xmlStyleSheet);
@@ -85,7 +87,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
     }
 
     protected Map<String, String> createDocumentations(Class<?>... classes) {
-        Function<Class[], Map<String, String>> creator = (cc) -> {
+        Function<Class<?>[], Map<String, String>> creator = (cc) -> {
             CollectContext collectContext = new CollectContext();
             for (Class<?> clazz : cc) {
                 handleClass(clazz, collectContext);
@@ -243,9 +245,6 @@ public class DocumentationAdder implements Supplier<Transformer> {
         return namespace + name;
     }
 
-    private static String defaultName(Field field) {
-        return field.getName();
-    }
     private static String defaultName(Method method) {
         String name = method.getName();
         if (name.startsWith("get")) {

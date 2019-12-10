@@ -16,13 +16,14 @@ import javax.xml.transform.stream.StreamResult;
 import org.junit.jupiter.api.Test;
 import org.meeuw.xml.bind.annotation.XmlDocumentation;
 
-import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 
 /**
  * @author Michiel Meeuwissen
  * @since 0.1
  */
+@SuppressWarnings("unused")
 public class DocumentationAdderTest {
 
     public static final String NS = "http://meeuw.org/a";
