@@ -31,6 +31,9 @@ public class DocumentationAdder implements Supplier<Transformer> {
 
     private static final String URI_FOR_DOCUMENTATIONS = "http://meeuw.org/documentations";
 
+    /**
+     * This map caches per type, the known documentation annotations.
+     */
     private static final Map<Class<?>[], Map<String, String>> CACHE = new ConcurrentHashMap<>();
 
     private final Class<?>[] classes;

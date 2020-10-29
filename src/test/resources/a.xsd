@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema targetNamespace="http://meeuw.org/a" version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="a">
+    <xs:sequence/>
+    <xs:attribute name="attr">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:pattern value="[xyz]"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+</xs:schema>
