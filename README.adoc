@@ -1,5 +1,9 @@
 = jaxb-documentation
+
 image:https://travis-ci.org/mihxil/jaxbdocumentation.png?[Build Status,link=https://travis-ci.org/mihxil/jaxbdocumentation]
+image:https://img.shields.io/maven-central/v/org.meeuw/jaxb-documentation.svg[Maven Central,link=https://search.maven.org/artifact/org.meeuw/jaxb-documentation]
+image:https://www.javadoc.io/badge/org.meeuw/jaxb-documentation.svg?color=blue[javadoc,link=https://www.javadoc.io/doc/org.meeuw/jaxb-documentation]
+
 
 Makes it possible to create also xsd:documentation tags with JAXB. If you use jaxb to _generate_ XSD's on the fly, they won't include any xsd:documentation tags. There is a maven plugin which may do this using javadoc, but that can only work compile time, and complicates the build.
 
