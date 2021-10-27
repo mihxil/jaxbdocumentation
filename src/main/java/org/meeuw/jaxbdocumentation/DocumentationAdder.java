@@ -277,6 +277,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
         XmlDocumentation annot = null;
         String type = "ELEMENT";
         boolean explicit = false;
+        List<String> extraNames = new ArrayList<>();
         for (Annotation a : annots) {
             if (a instanceof XmlDocumentation) {
                 annot = (XmlDocumentation) a;
@@ -299,11 +300,19 @@ public class DocumentationAdder implements Supplier<Transformer> {
             }
             if (a instanceof XmlElements) {
                 explicit = true;
+                for (XmlElement e : ((XmlElements) a).value()) {
+                    if (! e.name().equals("##default")) {
+                        extraNames.add(e.name());
+                    }
+                }
             }
         }
         if (annot != null && (implicit || explicit)) {
             String result  = name(annot, parent, type, name);
             docs.put(result, annot.value());
+            for (String extraName : extraNames) {
+                docs.put(name(annot, parent, "ELEMENT", extraName), annot.value());
+            }
             return result;
         }
         return null;
