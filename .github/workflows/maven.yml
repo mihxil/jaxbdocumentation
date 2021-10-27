@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Cancel previous Action
         uses: styfle/cancel-workflow-action@0.9.1
-        continue-on-error: true
+        continue-on-error: true # for act
         with:
           access_token: ${{ github.token }}
       - uses: actions/checkout@v2
@@ -42,6 +42,7 @@ jobs:
       - name: Test Report
         uses: dorny/test-reporter@v1
         if: success() || failure()    # run this step even if previous step failed
+        continue-on-error: true # for act
         with:
           name: Junit Tests            # Name of the check run which will be created
           path: '**/target/surefire-reports/TEST-*.xml'    # Path to test results

@@ -11,6 +11,10 @@
   <name>jaxb-documentation</name>
   <description>Provided @XmlDocumentation, to make it possible generate xsd annotations from java code runtime</description>
 
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
 
   <licenses>
     <license>
