@@ -1,6 +1,6 @@
 = jaxb-documentation
 
-image:https://github.com/mihxil/jaxbdocumentation/workflows/build/badge.svg?[Build Status,link=https://github.com/mihxil/jaxbdocumentation/actions?query=workflow%3Amaven]
+image:https://github.com/mihxil/jaxbdocumentation/workflows/build/badge.svg?[Build Status,link=https://github.com/mihxil/jaxbdocumentation/actions?query=workflow%3Abuild]
 image:https://img.shields.io/maven-central/v/org.meeuw/jaxb-documentation.svg[Maven Central,link=https://search.maven.org/artifact/org.meeuw/jaxb-documentation]
 image:https://www.javadoc.io/badge/org.meeuw/jaxb-documentation.svg?color=blue[javadoc,link=https://www.javadoc.io/doc/org.meeuw/jaxb-documentation]
 

@@ -1,21 +1,18 @@
 package org.meeuw.jaxbdocumentation;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
+import javax.xml.bind.JAXBException;
 import javax.xml.bind.annotation.*;
 import javax.xml.transform.*;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.meeuw.xml.bind.annotation.XmlDocumentation;
 
 /**
@@ -31,6 +28,9 @@ public class DocumentationAdder implements Supplier<Transformer> {
 
     private static final String URI_FOR_DOCUMENTATIONS = "http://meeuw.org/documentations";
 
+    private static final String PARAM_XML_STYLESHEET = "xmlStyleSheet";
+    private static final String PARAM_DEBUG = "debug";
+
     /**
      * This map caches per type, the known documentation annotations.
      */
@@ -40,6 +40,8 @@ public class DocumentationAdder implements Supplier<Transformer> {
     private Transformer transformer;
     private boolean useCache = false;
     private String xmlStyleSheet = null;
+    private boolean debug = false;
+
 
     public DocumentationAdder(Class<?>... classes) {
         this.classes = classes;
@@ -61,6 +63,14 @@ public class DocumentationAdder implements Supplier<Transformer> {
         this.xmlStyleSheet = xmlStyleSheet;
     }
 
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+    }
+
     public void transform(Source source, Result out) throws TransformerException {
         get().transform(source, out);
     }
@@ -75,8 +85,9 @@ public class DocumentationAdder implements Supplier<Transformer> {
                     new StreamSource(DocumentationAdder.class.getResourceAsStream("/add-documentation.xslt")));
                 transformer.setURIResolver(new DocumentationResolver(createDocumentations(classes)));
                 if (xmlStyleSheet != null) {
-                    transformer.setParameter("xmlStyleSheet", this.xmlStyleSheet);
+                    transformer.setParameter(PARAM_XML_STYLESHEET, this.xmlStyleSheet);
                 }
+                transformer.setParameter(PARAM_DEBUG, this.debug);
             } catch (TransformerConfigurationException e) {
                 throw new RuntimeException(e);
             }
@@ -87,6 +98,18 @@ public class DocumentationAdder implements Supplier<Transformer> {
 
     public Class<?>[] getClasses() {
         return classes;
+    }
+
+    public void write(Writer writer) throws JAXBException, IOException, TransformerException {
+        for (Map.Entry<String, Source> sourceEntry : Utils.schemaSources(getClasses()).entrySet()) {
+            transform(sourceEntry.getValue(), new StreamResult(writer));
+        }
+    }
+
+    public String write() throws JAXBException, IOException, TransformerException {
+        StringWriter writer = new StringWriter();
+        write(writer);
+        return writer.toString();
     }
 
     protected Map<String, String> createDocumentations(Class<?>... classes) {
@@ -114,7 +137,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
 
             XmlAccessType accessType = getAccessType(clazz);
 
-            String parent = handle(clazz.getAnnotations(), null, defaultName(clazz), true, collectContext.docs);
+            @NonNull String parent = handle(clazz.getAnnotation(XmlDocumentation.class), defaultName(clazz), collectContext.docs);
             for (Field field : clazz.getDeclaredFields()) {
                 handleField(parent, field, accessType, collectContext);
             }
@@ -139,7 +162,8 @@ public class DocumentationAdder implements Supplier<Transformer> {
         XmlAccessorType accessorType = clazz.getAnnotation(XmlAccessorType.class);
         return accessorType == null ? XmlAccessType.PUBLIC_MEMBER : accessorType.value();
     }
-    private static void handleField(String parent, Field field, XmlAccessType accessType, CollectContext collectContext) {
+
+    private static void handleField(@NonNull String parent, Field field, XmlAccessType accessType, CollectContext collectContext) {
 
         if (Modifier.isStatic(field.getModifiers())) {
             if (Enum.class.isAssignableFrom(field.getType())) {
@@ -225,7 +249,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
         String name = Character.toLowerCase(simpleName.charAt(0)) + simpleName.substring(1);
 
 
-        String namespace = "";
+        String namespace = "{}";
         Package pack = clazz.getPackage();
         if (pack != null) {
             XmlSchema schema = pack.getAnnotation(XmlSchema.class);
@@ -257,7 +281,15 @@ public class DocumentationAdder implements Supplier<Transformer> {
         }
     }
 
-    private static String handle(Annotation[] annots, String parent, String name, boolean implicit, Map<String, String> docs) {
+    private static String handle(XmlDocumentation xmlDocumentation, String name, Map<String, String> docs) {
+        if (xmlDocumentation != null) {
+            docs.put(name, xmlDocumentation.value());
+        }
+
+        return name;
+    }
+
+    private static String handle(Annotation[] annots, @NonNull String parent, String name, boolean implicit, Map<String, String> docs) {
         XmlDocumentation annot = null;
         String type = "ELEMENT";
         boolean explicit = false;
@@ -293,10 +325,12 @@ public class DocumentationAdder implements Supplier<Transformer> {
         return null;
     }
 
-    private static String name(XmlDocumentation annot, String parent, String type, String defaultName) {
-        String name =  annot.name().isEmpty() ? defaultName : annot.name();
-        String namespace = annot.namespace().isEmpty() ? "" : "{" + annot.namespace() + "}";
-        return (parent == null ? "" : (parent + "|" + type + "|") ) + namespace + name;
+    private static String name(
+        @NonNull XmlDocumentation annot,
+        @NonNull String parent,
+        @NonNull String type,
+        @NonNull String name) {
+        return parent + "|" + type + "|" + name;
     }
 
     /**
@@ -335,6 +369,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
             }
         }
     }
+
     private static class CollectContext {
         final Map<String, String> docs = new HashMap<>();
         final Set<Object> handled = new HashSet<>();

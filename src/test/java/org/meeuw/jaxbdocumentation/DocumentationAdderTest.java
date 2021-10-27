@@ -1,22 +1,14 @@
 package org.meeuw.jaxbdocumentation;
 
-import lombok.Data;
-
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.List;
-import java.util.Map;
-
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.annotation.*;
-import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.stream.StreamResult;
-
+import lombok.Data;
 import org.junit.jupiter.api.Test;
 import org.meeuw.xml.bind.annotation.XmlDocumentation;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.xmlunit.assertj3.XmlAssert.assertThat;
 
 
 /**
@@ -32,7 +24,7 @@ public class DocumentationAdderTest {
     public static class Parent {
         @XmlAttribute
         @XmlDocumentation(value = "documentation of parent attribute")
-        String parrentAttr;
+        String parentAttr;
 
     }
 
@@ -56,11 +48,12 @@ public class DocumentationAdderTest {
         @XmlDocumentation("Documentation for enum element")
         SomeEnum someEnum;
 
-        @XmlElements(
-            @XmlElement(type = C.class)
+        @XmlElements({
+            @XmlElement(type = C.class, name = "element")
+        }
         )
         @XmlDocumentation(value = "some docu about this list")
-        List<Object> list;
+        List<Object> elements;
 
         @XmlElement
         @XmlDocumentation("Documentation for lombok element")
@@ -85,7 +78,7 @@ public class DocumentationAdderTest {
         }
     }
 
-    @XmlDocumentation(value = "docu about b", namespace = NS, name = "b")
+    @XmlDocumentation(value = "docu about b")
     @XmlType(namespace = NS)
     public static class B {
 
@@ -120,13 +113,11 @@ public class DocumentationAdderTest {
     @Test
     public void addDocumentation() throws JAXBException, IOException, TransformerException {
         DocumentationAdder collector = new DocumentationAdder(A.class);
-        //collector.setXmlStyleSheet("xs3p.xsl");
-        StringWriter writer = new StringWriter();
+        //collector.setXmlStyleSheet("xs3p.xsl")
+        collector.setDebug(true);
+        String string = collector.write();
 
-        for (Map.Entry<String, Source> sourceEntry : Utils.schemaSources(collector.getClasses()).entrySet()) {
-            collector.transform(sourceEntry.getValue(), new StreamResult(writer));
-        }
-        assertThat(writer.toString()).isXmlEqualTo("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        assertThat(string).and("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<xs:schema targetNamespace=\"http://meeuw.org/a\" version=\"1.0\"\n" +
             "    xmlns:tns=\"http://meeuw.org/a\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
             "    <xs:complexType name=\"a\">\n" +
@@ -144,7 +135,7 @@ public class DocumentationAdderTest {
             "                    <xs:documentation>Documentation for enum element</xs:documentation>\n" +
             "                </xs:annotation>\n" +
             "            </xs:element>\n" +
-            "            <xs:element maxOccurs=\"unbounded\" minOccurs=\"0\" name=\"list\" type=\"tns:c\">\n" +
+            "            <xs:element maxOccurs=\"unbounded\" minOccurs=\"0\" name=\"element\" type=\"tns:c\">\n" +
             "                <xs:annotation>\n" +
             "                    <xs:documentation>some docu about this list</xs:documentation>\n" +
             "                </xs:annotation>\n" +
@@ -155,7 +146,7 @@ public class DocumentationAdderTest {
             "                </xs:annotation>\n" +
             "            </xs:element>\n" +
             "        </xs:sequence>\n" +
-            "        <xs:attribute name=\"parrentAttr\" type=\"xs:string\">\n" +
+            "        <xs:attribute name=\"parentAttr\" type=\"xs:string\">\n" +
             "            <xs:annotation>\n" +
             "                <xs:documentation>documentation of parent attribute</xs:documentation>\n" +
             "            </xs:annotation>\n" +
@@ -209,8 +200,10 @@ public class DocumentationAdderTest {
             "            <xs:enumeration value=\"z\"/>\n" +
             "        </xs:restriction>\n" +
             "    </xs:simpleType>\n" +
-            "</xs:schema>");
-
+            "</xs:schema>")
+            .ignoreWhitespace()
+            .ignoreComments()
+            .areSimilar();
     }
 
 
@@ -222,12 +215,10 @@ public class DocumentationAdderTest {
     @Test
     public void enumValue() throws JAXBException, IOException, TransformerException {
         DocumentationAdder collector = new DocumentationAdder(EnumValueTest.class);
-        StringWriter writer = new StringWriter();
+        String string  = collector.write();
 
-        for (Map.Entry<String, Source> sourceEntry : Utils.schemaSources(collector.getClasses()).entrySet()) {
-            collector.transform(sourceEntry.getValue(), new StreamResult(writer));
-        }
-        assertThat(writer.toString()).isXmlEqualTo("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        assertThat(string)
+            .and("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<xs:schema targetNamespace=\"http://meeuw.org/a\" version=\"1.0\"\n" +
             "    xmlns:tns=\"http://meeuw.org/a\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
             "    <xs:complexType name=\"enumValueTest\">\n" +
@@ -248,10 +239,68 @@ public class DocumentationAdderTest {
             "            <xs:enumeration value=\"z\"/>\n" +
             "        </xs:restriction>\n" +
             "    </xs:simpleType>\n" +
-            "</xs:schema>");
+            "</xs:schema>").ignoreWhitespace().areSimilar();
     }
 
+    @XmlDocumentation("with xml element")
+    static class WithXmlElementName {
+        @XmlDocumentation(value = "some docu about this list")
+        @XmlElement(name = "element")
+        List<String> elements;
+    }
 
+    @Test
+    public void xmlElementName() throws JAXBException, IOException, TransformerException {
+        DocumentationAdder adder = new DocumentationAdder(WithXmlElementName.class);
+        adder.setDebug(true);
+        String string = adder.write();
 
+        assertThat(string).and("<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" version=\"1.0\">\n" +
+            "  <xs:complexType name=\"withXmlElementName\">\n" +
+            "    <!--documentation key: {}withXmlElementName-->\n" +
+            "    <xs:annotation>\n" +
+            "      <xs:documentation>with xml element</xs:documentation>\n" +
+            "    </xs:annotation>\n" +
+            "    <xs:sequence>\n" +
+            "      <xs:element maxOccurs=\"unbounded\" minOccurs=\"0\" name=\"element\" type=\"xs:string\">\n" +
+            "        <!--documentation key: {}withXmlElementName|ELEMENT|element-->\n" +
+            "        <xs:annotation>\n" +
+            "          <xs:documentation>some docu about this list</xs:documentation>\n" +
+            "        </xs:annotation>\n" +
+            "      </xs:element>\n" +
+            "    </xs:sequence>\n" +
+            "  </xs:complexType>\n" +
+            "</xs:schema>")
+            .ignoreWhitespace()
+            .areSimilar();
+    }
+
+    static class WithXmlElements {
+        @XmlElements({
+            @XmlElement(type = Integer.class, name = "integer")
+        }
+        )
+        @XmlDocumentation(value = "some docu about this list")
+        List<Object> elements;
+    }
+
+    @Test
+    public void xmlElements() throws JAXBException, IOException, TransformerException {
+        DocumentationAdder adder = new DocumentationAdder(WithXmlElements.class);
+        adder.setDebug(true);
+        String string = adder.write();
+        assertThat(string).and("<xs:schema xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" version=\"1.0\">\n" +
+                "  <xs:complexType name=\"withXmlElements\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+                    "  <!--documentation key: {}withXmlElements (not found)-->\n" +
+                    "  <xs:sequence>\n" +
+                    "    <xs:element maxOccurs=\"unbounded\" minOccurs=\"0\" name=\"integer\" type=\"xs:int\">\n" +
+                    "      <!--documentation key: {}withXmlElements|ELEMENT|integer (not found)-->\n" +
+                    "    </xs:element>\n" +
+                    "  </xs:sequence>\n" +
+                    "</xs:complexType>" +
+                "</xs:schema>")
+            .ignoreWhitespace()
+            .areSimilar();
+    }
 
 }

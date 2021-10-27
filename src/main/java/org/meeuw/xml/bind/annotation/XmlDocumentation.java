@@ -1,8 +1,6 @@
 package org.meeuw.xml.bind.annotation;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
+import java.lang.annotation.*;
 
 
 /**
@@ -10,14 +8,12 @@ import java.lang.annotation.RetentionPolicy;
  * @since 0.1
  */
 @Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.FIELD, ElementType.TYPE})
+
 public @interface XmlDocumentation {
     /**
-     * The documentation to the xsd element
+     * The documentation to the xsd element, attribute or type
      */
     String value();
-
-
-    String namespace() default "";
-    String name() default "";
 
 }
