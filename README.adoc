@@ -4,6 +4,8 @@ image:https://github.com/mihxil/jaxbdocumentation/workflows/build/badge.svg?[Bui
 image:https://img.shields.io/maven-central/v/org.meeuw/jaxb-documentation.svg[Maven Central,link=https://search.maven.org/artifact/org.meeuw/jaxb-documentation]
 image:https://www.javadoc.io/badge/org.meeuw/jaxb-documentation.svg?color=blue[javadoc,link=https://www.javadoc.io/doc/org.meeuw/jaxb-documentation]
 image:https://codecov.io/gh/mihxil/jaxbdocumentation/branch/main/graph/badge.svg[codecov,link=https://codecov.io/gh/mihxil/jaxbdocumentation]
+image:https://img.shields.io/nexus/s/https/oss.sonatype.org/org.meeuw/jaxb-documentation.svg[snapshots,link=https://oss.sonatype.org/content/repositories/snapshots/org/meeuw/jaxb-documentation/]
+
 
 
 
