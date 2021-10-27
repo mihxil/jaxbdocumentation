@@ -23,6 +23,10 @@ public class Utils {
 
     /**
      * Returns XSD schema's as a map of {@link Source}'s. The key is the namespace.
+     * @param classes To create schema's for.
+     * @return a map with {@link Source}s
+     * @throws JAXBException If something wrong with jaxb
+     * @throws IOException if io
      */
     public static Map<String, Source> schemaSources(Class<?>... classes) throws JAXBException, IOException {
         JAXBContext context = JAXBContext.newInstance(classes);

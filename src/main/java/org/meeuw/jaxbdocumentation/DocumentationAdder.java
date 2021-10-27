@@ -12,12 +12,14 @@ import javax.xml.bind.annotation.*;
 import javax.xml.transform.*;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import lombok.Getter;
+import lombok.Setter;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.meeuw.xml.bind.annotation.XmlDocumentation;
 
 /**
  * Supplies a {@link Transformer} that adds xs:documentation tags to an existing XSD.
- * The contents of the documentation tags is determined by introspecting while looking for {@link @XmlDocumentation} tags.
+ * The contents of the documentation tags is determined by introspecting while looking for {@link XmlDocumentation} tags.
  *
  * The transformer is an actual XSLT `add-documentation.xslt`, which combines the information collected via introspection with the original XSD XML.
  *
@@ -38,37 +40,19 @@ public class DocumentationAdder implements Supplier<Transformer> {
 
     private final Class<?>[] classes;
     private Transformer transformer;
+    @Getter
+    @Setter
     private boolean useCache = false;
+    @Setter
+    @Getter
     private String xmlStyleSheet = null;
+    @Getter
+    @Setter
     private boolean debug = false;
 
 
     public DocumentationAdder(Class<?>... classes) {
         this.classes = classes;
-    }
-
-    public boolean isUseCache() {
-        return useCache;
-    }
-
-    public void setUseCache(boolean useCache) {
-        this.useCache = useCache;
-    }
-
-    public String getXmlStyleSheet() {
-        return xmlStyleSheet;
-    }
-
-    public void setXmlStyleSheet(String xmlStyleSheet) {
-        this.xmlStyleSheet = xmlStyleSheet;
-    }
-
-    public boolean isDebug() {
-        return debug;
-    }
-
-    public void setDebug(boolean debug) {
-        this.debug = debug;
     }
 
     public void transform(Source source, Result out) throws TransformerException {

@@ -12,7 +12,8 @@ import java.lang.annotation.*;
 
 public @interface XmlDocumentation {
     /**
-     * The documentation to the xsd element, attribute or type
+     *
+     * @return The documentation to the xsd element, attribute or type
      */
     String value();
 
