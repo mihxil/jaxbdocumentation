@@ -33,6 +33,12 @@ public class DocumentationAdder implements Supplier<Transformer> {
     private static final String PARAM_XML_STYLESHEET = "xmlStyleSheet";
     private static final String PARAM_DEBUG = "debug";
 
+    enum Type {
+        ELEMENT,
+        ATTRIBUTE,
+        ENUMERATION;
+    }
+
     /**
      * This map caches per type, the known documentation annotations.
      */
@@ -179,7 +185,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
         String defaultFieldName = field.getName();
         XmlDocumentation annot = field.getAnnotation(XmlDocumentation.class);
         if (annot != null) {
-            String key = name(annot, parent, "ENUMERATION", defaultFieldName);
+            String key = name(annot, parent, Type.ENUMERATION, defaultFieldName);
             collectContext.docs.put(key, annot.value());
         }
 
@@ -275,7 +281,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
 
     private static String handle(Annotation[] annots, @NonNull String parent, String name, boolean implicit, Map<String, String> docs) {
         XmlDocumentation annot = null;
-        String type = "ELEMENT";
+        Type type = Type.ELEMENT;
         boolean explicit = false;
         List<String> extraNames = new ArrayList<>();
         for (Annotation a : annots) {
@@ -287,7 +293,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
             }
             if (a instanceof XmlAttribute) {
                 explicit = true;
-                type = "ATTRIBUTE";
+                type = Type.ATTRIBUTE;
                 if (!((XmlAttribute) a).name().equals("##default")) {
                     name = ((XmlAttribute) a).name();
                 }
@@ -311,7 +317,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
             String result  = name(annot, parent, type, name);
             docs.put(result, annot.value());
             for (String extraName : extraNames) {
-                docs.put(name(annot, parent, "ELEMENT", extraName), annot.value());
+                docs.put(name(annot, parent, Type.ELEMENT, extraName), annot.value());
             }
             return result;
         }
@@ -321,7 +327,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
     private static String name(
         @NonNull XmlDocumentation annot,
         @NonNull String parent,
-        @NonNull String type,
+        @NonNull Type type,
         @NonNull String name) {
         return parent + "|" + type + "|" + name;
     }
