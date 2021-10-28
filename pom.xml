@@ -82,8 +82,8 @@
   <packaging>jar</packaging>
 
   <scm>
-    <connection>scm:git:git://github.com/mihxil/jaxbdocumentation.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/mihxil/jaxbdocumentation.git</developerConnection>
+    <connection>scm:git:${project.scm.url}</connection>
+    <developerConnection>scm:git:${project.scm.url}</developerConnection>
     <url>https://github.com/mihxil/jaxbdocumentation</url>
     <tag>HEAD</tag>
   </scm>
