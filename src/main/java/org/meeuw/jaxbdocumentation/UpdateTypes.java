@@ -8,6 +8,12 @@ import javax.xml.transform.*;
 import javax.xml.transform.stream.StreamSource;
 
 /**
+ * This is a similar tool {@link DocumentationAdder}, the idea here is that the types in by jaxb XSD are sometimes not perferct.
+ *
+ * E.g. it misses {@link javax.validation.constraints.Pattern} to add a pattern on the type.
+ *
+ * TODO: This is unfinished, and not working yet.
+ *
  * @author Michiel Meeuwissen
  * @since 0.4
  */
