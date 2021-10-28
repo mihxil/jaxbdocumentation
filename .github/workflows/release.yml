@@ -27,10 +27,10 @@ jobs:
         with:
           global: true
           name: 'github $GITHUB_ACTOR'
-          email: 'digitaal-techniek@vpro.nl'
+          email: 'github@meeuw.org'
           token: '${{ secrets.GITHUB_TOKEN  }}'
       - name: Release
         run: |
           mvn --batch-mode  -Darguments=-DskipTests  -DpushChanges=false release:prepare
           git push --atomic -v --follow-tags
-          mvn -Pdeploy,ossrh --batch-mode -Darguments=-DskipTests release:perform
+          mvn -Pdeploy --batch-mode -Darguments=-DskipTests release:perform
