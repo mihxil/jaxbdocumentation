@@ -1,19 +1,28 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <groupId>org.meeuw</groupId>
   <artifactId>jaxb-documentation</artifactId>
-
-  <version>0.5-SNAPSHOT</version>
-  <url>https://github.com/mihxil/jaxbdocumetnation</url>
-
   <name>jaxb-documentation</name>
-  <description>Provided @XmlDocumentation, to make it possible generate xsd annotations from java code runtime</description>
+  <packaging>jar</packaging>
+  <version>0.5-SNAPSHOT</version>
+
+  <url>https://github.com/mihxil/jaxbdocumentation</url>
+
+  <description>
+    Provides @XmlDocumentation, to make it possible to generate xsd annotations from java code at runtime
+  </description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+
+  <scm>
+    <connection>scm:git:${project.scm.url}</connection>
+    <developerConnection>scm:git:${project.scm.url}</developerConnection>
+    <url>https://github.com/mihxil/jaxbdocumentation</url>
+    <tag>HEAD</tag>
+  </scm>
 
 
   <licenses>
@@ -79,14 +88,6 @@
 
 
   </dependencies>
-  <packaging>jar</packaging>
-
-  <scm>
-    <connection>scm:git:${project.scm.url}</connection>
-    <developerConnection>scm:git:${project.scm.url}</developerConnection>
-    <url>https://github.com/mihxil/jaxbdocumentation</url>
-    <tag>HEAD</tag>
-  </scm>
 
   <distributionManagement>
     <snapshotRepository>
