@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.meeuw.xml.bind.annotation.XmlDocumentation;
+import org.meeuw.xml.bind.annotation.XmlDocumentations;
 
 /**
  * Supplies a {@link Transformer} that adds xs:documentation tags to an existing XSD.
@@ -36,7 +37,28 @@ public class DocumentationAdder implements Supplier<Transformer> {
     enum Type {
         ELEMENT,
         ATTRIBUTE,
-        ENUMERATION;
+        ENUMERATION,
+        TRANSIENT;
+
+        public static Optional<Type> isEnum(Field field) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                if (Enum.class.isAssignableFrom(field.getType())) {
+                    return Optional.of(ENUMERATION);
+                }
+            }
+            return Optional.empty();
+        }
+
+        public static Type of(AccessibleObject accessibleObject) {
+            if (accessibleObject.getAnnotation(XmlTransient.class) != null) {
+                return TRANSIENT;
+            }
+            if (accessibleObject.getAnnotation(XmlAttribute.class) != null) {
+                return ATTRIBUTE;
+            }
+            return ELEMENT;
+
+        }
     }
 
     /**
@@ -155,10 +177,8 @@ public class DocumentationAdder implements Supplier<Transformer> {
 
     private static void handleField(@NonNull String parent, Field field, XmlAccessType accessType, CollectContext collectContext) {
 
-        if (Modifier.isStatic(field.getModifiers())) {
-            if (Enum.class.isAssignableFrom(field.getType())) {
-                handleEnumValue(parent, field, collectContext);
-            }
+        if (Type.isEnum(field).isPresent()) {
+            handleEnumValue(parent, field, collectContext);
             return;
         }
         String defaultFieldName = field.getName();
@@ -172,7 +192,7 @@ public class DocumentationAdder implements Supplier<Transformer> {
                 implicit = true;
                 break;
         }
-        handle(field.getAnnotations(), parent, defaultFieldName, implicit, collectContext.docs);
+        handleFieldOrMethod(field, parent, defaultFieldName, implicit, collectContext.docs);
         recurseXmlElementAnnotations(
             collectXmlElements(field.getAnnotation(XmlElement.class), field.getAnnotation(XmlElements.class)),
             collectContext
@@ -181,11 +201,28 @@ public class DocumentationAdder implements Supplier<Transformer> {
         handleClass(field.getType(), collectContext);
     }
 
+    private static void handleFieldOrMethod(AccessibleObject accessibleObject, String parent, String defaultFieldName, boolean implicit, Map<String, String> docs){
+        Type type = Type.of(accessibleObject);
+        switch(type) {
+            case ELEMENT:
+                handleElement(accessibleObject, parent, defaultFieldName, implicit, docs);
+                break;
+            case ATTRIBUTE:
+                handleAttribute(accessibleObject, parent, defaultFieldName, implicit, docs);
+                break;
+            case TRANSIENT:
+                break;
+            default:
+                throw new IllegalStateException();
+        }
+    }
+
+
     private static void handleEnumValue(String parent, Field field, CollectContext collectContext) {
-        String defaultFieldName = field.getName();
-        XmlDocumentation annot = field.getAnnotation(XmlDocumentation.class);
+        final String defaultFieldName = field.getName();
+        final XmlDocumentation annot = field.getAnnotation(XmlDocumentation.class);
         if (annot != null) {
-            String key = name(annot, parent, Type.ENUMERATION, defaultFieldName);
+            String key = name(parent, Type.ENUMERATION, defaultFieldName);
             collectContext.docs.put(key, annot.value());
         }
 
@@ -225,7 +262,8 @@ public class DocumentationAdder implements Supplier<Transformer> {
         }
         String defaultFieldName = defaultName(method);
 
-        handle(method.getAnnotations(), parent, defaultFieldName, implicit, collectContext.docs);
+        handleFieldOrMethod(method, parent, defaultFieldName, implicit, collectContext.docs);
+
         recurseXmlElementAnnotations(
             collectXmlElements(method.getAnnotation(XmlElement.class), method.getAnnotation(XmlElements.class)),
             collectContext
@@ -279,53 +317,62 @@ public class DocumentationAdder implements Supplier<Transformer> {
         return name;
     }
 
-    private static String handle(Annotation[] annots, @NonNull String parent, String name, boolean implicit, Map<String, String> docs) {
-        XmlDocumentation annot = null;
-        Type type = Type.ELEMENT;
-        boolean explicit = false;
-        List<String> extraNames = new ArrayList<>();
-        for (Annotation a : annots) {
-            if (a instanceof XmlDocumentation) {
-                annot = (XmlDocumentation) a;
-            }
-            if (a instanceof XmlTransient) {
-                return null;
-            }
-            if (a instanceof XmlAttribute) {
-                explicit = true;
-                type = Type.ATTRIBUTE;
-                if (!((XmlAttribute) a).name().equals("##default")) {
-                    name = ((XmlAttribute) a).name();
+    private static void handleElement(final AccessibleObject accessibleObject, final @NonNull String parent, String name, final boolean implicit, final Map<String, String> docs) {
+        XmlDocumentation annot = accessibleObject.getAnnotation(XmlDocumentation.class);
+        final XmlDocumentations annots = accessibleObject.getAnnotation(XmlDocumentations.class);
+        if (annots != null) {
+            annot = Arrays.stream(annots.value()).filter(x -> x.name().equals("")).findFirst().orElse(null);
+        }
+        if (annot != null || annots != null) {
+            boolean explicit = false;
+            List<String> extraNames = new ArrayList<>();
+            for (Annotation a : accessibleObject.getAnnotations()) {
+                if (a instanceof XmlElement) {
+                    explicit = true;
+                    if (!((XmlElement) a).name().equals("##default")) {
+                        name = ((XmlElement) a).name();
+                    }
                 }
-            }
-            if (a instanceof XmlElement) {
-                explicit = true;
-                if (!((XmlElement) a).name().equals("##default")) {
-                    name = ((XmlElement) a).name();
-                }
-            }
-            if (a instanceof XmlElements) {
-                explicit = true;
-                for (XmlElement e : ((XmlElements) a).value()) {
-                    if (! e.name().equals("##default")) {
-                        extraNames.add(e.name());
+                if (a instanceof XmlElements) {
+                    explicit = true;
+                    for (XmlElement e : ((XmlElements) a).value()) {
+                        if (!e.name().equals("##default")) {
+                            extraNames.add(e.name());
+                        }
                     }
                 }
             }
-        }
-        if (annot != null && (implicit || explicit)) {
-            String result  = name(annot, parent, type, name);
-            docs.put(result, annot.value());
-            for (String extraName : extraNames) {
-                docs.put(name(annot, parent, Type.ELEMENT, extraName), annot.value());
+            if ((implicit || explicit)) {
+                if (annot != null) {
+                    String result = name(parent, Type.ELEMENT, name);
+                    docs.put(result, annot.value());
+                }
+                for (String extraName : extraNames) {
+                    XmlDocumentation extraAnnot = annots == null ? annot : Arrays.stream(annots.value()).filter(x -> x.name().equals(extraName)).findFirst().orElse(annot);
+                    docs.put(name(parent, Type.ELEMENT, extraName), extraAnnot.value());
+                }
+
             }
-            return result;
         }
-        return null;
+    }
+
+    private static void handleAttribute(AccessibleObject accessibleObject, @NonNull String parent, String name, boolean implicit, Map<String, String> docs) {
+        XmlDocumentation annot = accessibleObject.getAnnotation(XmlDocumentation.class);
+        XmlDocumentations annots = accessibleObject.getAnnotation(XmlDocumentations.class);
+        if (annots != null) {
+            throw new IllegalStateException("An attribute cannot have multiple xml documentations");
+        }
+        if (annot != null) {
+            XmlAttribute attribute = accessibleObject.getAnnotation(XmlAttribute.class);
+            if (!attribute.name().equals("##default")) {
+                name = attribute.name();
+            }
+            String result = name(parent, Type.ATTRIBUTE, name);
+            docs.put(result, annot.value());
+        }
     }
 
     private static String name(
-        @NonNull XmlDocumentation annot,
         @NonNull String parent,
         @NonNull Type type,
         @NonNull String name) {

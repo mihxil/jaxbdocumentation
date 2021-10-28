@@ -275,12 +275,17 @@ public class DocumentationAdderTest {
             .areSimilar();
     }
 
-    static class WithXmlElements {
+    public static class WithXmlElements {
+        public WithXmlElements() {
+
+        }
         @XmlElements({
-            @XmlElement(type = Integer.class, name = "integer")
+            @XmlElement(type = Integer.class, name = "integer"),
+            @XmlElement(type = String.class, name = "string")
         }
         )
-        @XmlDocumentation(value = "some docu about this list")
+        @XmlDocumentation(value = "some docu about this integer", name="integer")
+        @XmlDocumentation(value = "some docu about this object")
         List<Object> elements;
     }
 
@@ -293,12 +298,20 @@ public class DocumentationAdderTest {
                 "  <xs:complexType name=\"withXmlElements\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
                     "  <!--documentation key: {}withXmlElements (not found)-->\n" +
                     "  <xs:sequence>\n" +
-                    "    <xs:element maxOccurs=\"unbounded\" minOccurs=\"0\" name=\"integer\" type=\"xs:int\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
-                    "  <!--documentation key: {}withXmlElements|ELEMENT|integer-->\n" +
-                    "  <xs:annotation>\n" +
-                    "    <xs:documentation>some docu about this list</xs:documentation>\n" +
-                    "  </xs:annotation>\n" +
-                    "</xs:element>\n" +
+                    "    <xs:choice maxOccurs=\"unbounded\" minOccurs=\"0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n" +
+                "  <xs:element name=\"integer\" type=\"xs:int\">\n" +
+                "    <!--documentation key: {}withXmlElements|ELEMENT|integer-->\n" +
+                "    <xs:annotation>\n" +
+                "      <xs:documentation>some docu about this integer</xs:documentation>\n" +
+                "    </xs:annotation>\n" +
+                "  </xs:element>\n" +
+                "  <xs:element name=\"string\" type=\"xs:string\">\n" +
+                "    <!--documentation key: {}withXmlElements|ELEMENT|string-->\n" +
+                "    <xs:annotation>\n" +
+                "      <xs:documentation>some docu about this object</xs:documentation>\n" +
+                "    </xs:annotation>\n" +
+                "  </xs:element>\n" +
+                "</xs:choice>\n" +
                     "  </xs:sequence>\n" +
                     "</xs:complexType>" +
                 "</xs:schema>")
