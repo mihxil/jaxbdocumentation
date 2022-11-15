@@ -28,7 +28,7 @@
   <licenses>
     <license>
       <name>Apache License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
       <distribution>repo</distribution>
       <comments>A business-friendly OSS license</comments>
     </license>
@@ -39,7 +39,7 @@
       <id>mihxil</id>
       <name>Michiel Meeuwissen</name>
       <email>michiel.meeuwissen+github@gmail.com</email>
-      <url>https://www.meeuw.org</url>
+      <url>https://meeuw.org</url>
       <roles>
         <role>architect</role>
         <role>developer</role>
@@ -52,13 +52,13 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>5.9.0-RC1</version>
+      <version>5.9.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.checkerframework</groupId>
       <artifactId>checker-qual</artifactId>
-      <version>3.22.2</version>
+      <version>3.27.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
