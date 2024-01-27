@@ -64,3 +64,17 @@ public class DocumentationAdderTest {
     }
 
 ----
+
+
+|===
+|Version  | java | 
+
+| &le; 0.4
+| 8 / jaxb
+| &le; 2023
+
+|&ge; 0.5
+| 8 / jakarta
+| 2024
+|===
+
