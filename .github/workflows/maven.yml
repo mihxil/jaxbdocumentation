@@ -21,33 +21,27 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
-          java-version: 8
-      - uses: s4u/maven-settings-action@v2
-        with:
-          servers: '[{"id": "ossrh", "username": "mihxil", "password": "${{secrets.OSSRH_PASSWORD}}"}]'
-      - uses: crazy-max/ghaction-import-gpg@v3
-        with:
+          distribution: 'temurin'
+          java-version: 11
+          cache: maven
+          server-id: ossrh
+          server-username: OSSRH_USERNAME
+          server-password: OSSRH_PASSWORD
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
-          passphrase: ${{ secrets.GPG_SECRET_KEY_PASSPHRASE }}
-      - uses: actions/cache@v1
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+          gpg-passphrase: GPG_SECRET_KEY_PASSPHRASE
       - name: Build with Maven
         run: mvn -B -Pdeploy -U deploy
+        env:
+          OSSRH_USERNAME: mihxil
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          GPG_SECRET_KEY_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSPHRASE }}
         # continue-on-error: true
-      - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: success() || failure()    # run this step even if previous step failed
-        continue-on-error: true # for act
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2.12.0
+        if: always()
         with:
-          name: Junit Tests            # Name of the check run which will be created
-          path: '**/target/surefire-reports/TEST-*.xml'    # Path to test results
-          reporter: java-junit       # Format of test results
-          only-summary: 'false'
+          junit_files: "**/target/surefire-reports/*.xml"
+          check_name: Tests results
       - name: Publish to codecov
         uses: codecov/codecov-action@v3
         if: github.ref == 'refs/heads/main'
