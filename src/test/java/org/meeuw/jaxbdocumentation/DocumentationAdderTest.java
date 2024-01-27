@@ -1,13 +1,18 @@
 package org.meeuw.jaxbdocumentation;
 
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.annotation.*;
+import lombok.Data;
+
 import java.io.IOException;
 import java.util.List;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.annotation.*;
+
 import javax.xml.transform.TransformerException;
-import lombok.Data;
+
 import org.junit.jupiter.api.Test;
+
 import org.meeuw.xml.bind.annotation.XmlDocumentation;
+
 import static org.xmlunit.assertj3.XmlAssert.assertThat;
 
 
@@ -111,7 +116,7 @@ public class DocumentationAdderTest {
 
 
     @Test
-    public void addDocumentation() throws JAXBException, IOException, TransformerException {
+    public void addDocumentation() throws JAXBException, IOException, TransformerException, jakarta.xml.bind.JAXBException {
         DocumentationAdder collector = new DocumentationAdder(A.class);
         //collector.setXmlStyleSheet("xs3p.xsl")
         collector.setDebug(true);

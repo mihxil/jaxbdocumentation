@@ -49,5 +49,5 @@ jobs:
           reporter: java-junit       # Format of test results
           only-summary: 'false'
       - name: Publish to codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         if: github.ref == 'refs/heads/main'
