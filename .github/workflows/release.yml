@@ -7,7 +7,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      MAVEN_OPTS: -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      MAVEN_ARGS: '--no-transfer-progress'
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
@@ -15,12 +15,11 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 11
-          cache: maven
-          server-id: ossrh
-          server-username: OSSRH_USERNAME
-          server-password: OSSRH_PASSWORD
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_PASSWORD
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
-          gpg-passphrase: GPG_SECRET_KEY_PASSPHRASE
+          cache: maven
       - uses: oleksiyrudenko/gha-git-credentials@v2.1
         with:
           global: true
@@ -33,6 +32,6 @@ jobs:
           git push --atomic -v --follow-tags
           mvn -Pdeploy --batch-mode -Darguments=-DskipTests release:perform
         env:
-          OSSRH_USERNAME: mihxil
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-          GPG_SECRET_KEY_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSPHRASE }}
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSPHRASE }}

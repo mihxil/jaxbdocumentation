@@ -6,42 +6,45 @@ on:
     branches: [main]
   workflow_dispatch:
 
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
 
     runs-on: ubuntu-latest
+
     env:
-      MAVEN_OPTS: -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      MAVEN_ARGS: '--no-transfer-progress'
     steps:
-      - name: Cancel previous Action
-        uses: styfle/cancel-workflow-action@0.12.1
-        continue-on-error: true # for act
-        with:
-          access_token: ${{ github.token }}
+
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
           java-version: 11
-          cache: maven
-          server-id: ossrh
-          server-username: OSSRH_USERNAME
-          server-password: OSSRH_PASSWORD
+          distribution: 'temurin'
+          cache: "maven"
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_PASSWORD
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
-          gpg-passphrase: GPG_SECRET_KEY_PASSPHRASE
       - name: Build with Maven
         run: mvn -B -Pdeploy -U deploy
         env:
-          OSSRH_USERNAME: mihxil
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-          GPG_SECRET_KEY_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSPHRASE }}
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_SECRET_KEY_PASSPHRASE }
         # continue-on-error: true
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2.12.0
+        uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
-          junit_files: "**/target/surefire-reports/*.xml"
+          files: "**/target/surefire-reports/*.xml"
           check_name: Tests results
       - name: Publish to codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         if: github.ref == 'refs/heads/main'
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # required
